@@ -6,14 +6,13 @@ import { formatDate } from '../utils/format-date'
 
 export async function mealsRoutes(app: FastifyInstance) {
 
-  app.post('/', { preHandler: [checkSessionIdExists] },async (request, reply) => {
+  app.post('/', { preHandler: [checkSessionIdExists] }, async (request, reply) => {
     const createMealSchema = z.object({
       name: z.string(),
       description: z.string(),
       isOnDiet: z.boolean(),
       date: z.coerce.date()
     })
-
 
     const { name, description, isOnDiet, date } = createMealSchema.parse(request.body)
 
@@ -31,7 +30,11 @@ export async function mealsRoutes(app: FastifyInstance) {
     return reply.status(201).send()
   })
 
-  app.get('/', { preHandler: checkSessionIdExists }, (request, reply) => {
-   
+  app.get('/', { preHandler: checkSessionIdExists }, async (request, reply) => {
+    const userId = request.user?.id
+    
+    const meals = await knex('meals').where({ user_id: userId}).select('date', 'name', 'is_on_diet')
+
+    return reply.status(200).send({ meals })
   })
 }
