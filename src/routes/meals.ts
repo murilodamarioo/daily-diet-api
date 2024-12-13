@@ -33,6 +33,8 @@ export async function mealsRoutes(app: FastifyInstance) {
       id: z.string().uuid()
     })
 
+    const userId = request.user?.id
+
     const updateMealSchema = z.object({
       name: z.string(),
       description: z.string(),
@@ -45,7 +47,7 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     if (!name || !description) return reply.status(400).send({ message: 'Missing required fields' })
 
-    const meal = await knex('meals').where({ id }).first()
+    const meal = await knex('meals').where({ id, user_id: userId }).first()
 
     if (!meal) return reply.status(404).send({ message: 'Meal not found' })
 
