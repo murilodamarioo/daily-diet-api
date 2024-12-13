@@ -49,6 +49,8 @@ export async function mealsRoutes(app: FastifyInstance) {
     
     const researchedMeal = await knex('meals').where({ user_id: userId, id }).first()
 
+    if (!researchedMeal) return reply.status(404).send({ message: 'Meal not found' })
+
     const meal = {
       name: researchedMeal?.name,
       desccription: researchedMeal?.description,
@@ -57,5 +59,23 @@ export async function mealsRoutes(app: FastifyInstance) {
     }
 
     return reply.status(200).send({ meal })
+  })
+
+  app.delete('/:id', { preHandler: checkSessionIdExists }, async (request, reply) => {
+    const deleteMealSchema = z.object({
+      id: z.string().uuid()
+    })
+
+    const { id } = deleteMealSchema.parse(request.params)
+
+    const userId = request.user?.id
+
+    const researchedMeal = await knex('meals').where({ user_id: userId, id }).first()
+
+    if (!researchedMeal) return reply.status(404).send({ message: 'Meal not found to delete' })
+
+    await knex('meals').where({ user_id: userId, id}).delete()
+
+    return reply.status(204).send()
   })
 }
