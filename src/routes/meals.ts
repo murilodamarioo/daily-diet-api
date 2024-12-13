@@ -90,6 +90,38 @@ export async function mealsRoutes(app: FastifyInstance) {
     return reply.status(200).send({ meal })
   })
 
+  app.get('/metrics', { preHandler: checkSessionIdExists }, async (request, reply) => {
+    const userId = request.user?.id
+
+    const totalMeals = await knex('meals').where({ user_id: request.user?.id }).orderBy('date', 'desc')
+    const totalMealsOnDiet = await knex('meals').where({ user_id: userId, is_on_diet: true}).count('id', { as: 'total' }).first()
+    const totalMealsOffDiet = await knex('meals').where({ user_id: userId, is_on_diet: false}).count('id', { as: 'total' }).first()
+
+    const { bestOnDietSequence } = totalMeals.reduce((acc, meal) => {
+      if (meal.is_on_diet) {
+        acc.currentSequence += 1
+      } else {
+        acc.currentSequence = 0
+      }
+
+      if (acc.currentSequence > acc.bestOnDietSequence) {
+        acc.bestOnDietSequence = acc.currentSequence
+      }
+
+      return acc
+    },
+    { bestOnDietSequence: 0, currentSequence: 0 })
+
+    const metrics = {
+      bestOnDietSequence,
+      meals: totalMeals.length,
+      mealsOnDiet: totalMealsOnDiet?.total,
+      mealsOffDiet: totalMealsOffDiet?.total
+    }
+
+    return reply.status(200).send({ metrics })
+  })
+
   app.delete('/:id', { preHandler: checkSessionIdExists }, async (request, reply) => {
     const deleteMealSchema = z.object({
       id: z.string().uuid()
