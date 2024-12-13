@@ -2,11 +2,11 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 import { knex } from '../database'
-import { formatDate } from '../utils/format-date'
 
 export async function mealsRoutes(app: FastifyInstance) {
 
   app.post('/', { preHandler: [checkSessionIdExists] }, async (request, reply) => {
+
     const createMealSchema = z.object({
       name: z.string(),
       description: z.string(),
@@ -16,18 +16,47 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     const { name, description, isOnDiet, date } = createMealSchema.parse(request.body)
 
-    const dateFormated = formatDate(date)
-
     await knex('meals').insert({
       id: crypto.randomUUID(),
       user_id: request.user?.id,
       name,
       description,
       is_on_diet: isOnDiet,
-      date: dateFormated
+      date: date.getTime()
     })
 
     return reply.status(201).send()
+  })
+
+  app.put('/:id', { preHandler: [checkSessionIdExists] }, async (request, reply) => {
+    const paramsSchema = z.object({
+      id: z.string().uuid()
+    })
+
+    const updateMealSchema = z.object({
+      name: z.string(),
+      description: z.string(),
+      date: z.coerce.date(),
+      isOnDiet: z.boolean()
+    })
+
+    const { id } = paramsSchema.parse(request.params)
+    const { name, description, date, isOnDiet } = updateMealSchema.parse(request.body)
+
+    if (!name || !description) return reply.status(400).send({ message: 'Missing required fields' })
+
+    const meal = await knex('meals').where({ id }).first()
+
+    if (!meal) return reply.status(404).send({ message: 'Meal not found' })
+
+    await knex('meals').where({ id }).update({
+      name,
+      description,
+      date: date.getTime(), 
+      is_on_diet: isOnDiet
+    })
+
+    return reply.status(204).send()
   })
 
   app.get('/', { preHandler: checkSessionIdExists }, async (request, reply) => {
