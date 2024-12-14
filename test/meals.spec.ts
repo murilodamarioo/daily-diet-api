@@ -163,4 +163,41 @@ describe('Meals routes', () => {
       .expect(204)
     })
   })
+
+  describe('DELETE - success cases', () => {
+    it('should be able to delete a meal from a user', async () => {
+      const userResponse = await request(app.server)
+      .post('/users')
+      .send({
+        name: 'John Doe',
+        email: 'john@email.com'
+      })
+      expect(201)
+
+      const cookies = userResponse.get('Set-Cookie')
+
+      await request(app.server)
+      .post('/meals')
+      .set('Cookie', cookies)
+      .send({
+        name: 'Breakfast',
+        description: "It's a breakfast",
+        isOnDiet: true,
+        date: new Date(),
+      })
+      .expect(201)
+
+      const mealsResponse = await request(app.server)
+      .get('/meals')
+      .set('Cookie', cookies)
+      .expect(200)
+
+      const mealId = mealsResponse.body.meals[0].id
+
+      await request(app.server)
+      .delete(`/meals/${mealId}`)
+      .set('Cookie', cookies)
+      .expect(204)
+    })
+  })
 })
