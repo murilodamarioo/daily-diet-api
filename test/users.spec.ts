@@ -24,9 +24,11 @@ describe('Users routes', () => {
     const response = await request(app.server).post('/users').send({
       name: 'John Doe',
       email: 'john@email.com'
-    })
+    }).expect(201)
 
-    expect(response.statusCode).toEqual(201)
+    const cookies = response.get('Set-Cookie')
+
+    expect(cookies).toEqual(expect.arrayContaining([expect.stringContaining('sessionId')]))
   })
 
   it('should not be able to create a user with same email', async () => {
