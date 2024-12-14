@@ -64,7 +64,7 @@ export async function mealsRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: checkSessionIdExists }, async (request, reply) => {
     const userId = request.user?.id
     
-    const meals = await knex('meals').where({ user_id: userId}).select('date', 'name', 'is_on_diet')
+    const meals = await knex('meals').where({ user_id: userId}).select('id', 'date', 'name', 'is_on_diet')
 
     return reply.status(200).send({ meals })
   })
@@ -83,6 +83,7 @@ export async function mealsRoutes(app: FastifyInstance) {
     if (!researchedMeal) return reply.status(404).send({ message: 'Meal not found' })
 
     const meal = {
+      id,
       name: researchedMeal?.name,
       desccription: researchedMeal?.description,
       isOnDiet: researchedMeal?.is_on_diet,
