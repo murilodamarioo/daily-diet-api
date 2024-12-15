@@ -42,6 +42,34 @@ describe('Meals routes', () => {
       .expect(201)
     })
   })
+
+  describe('POST - failure cases', () => {
+    it('should not be able to create a new meal without required fields', async () => {
+      const userResponse = await request(app.server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@email.com'
+        })
+        .expect(201)
+      
+      const cookies = userResponse.get('Set-Cookie')
+      expect(cookies).toBeDefined()
+
+      const response = await request(app.server)
+        .post('/meals')
+        .set('Cookie', cookies)
+        .send({
+          name: '',
+          description: '',
+          isOnDiet: true,
+          date: new Date()
+        })
+
+        expect(response.statusCode).toBe(400)
+        expect(response.body.message).toBe('Missing required fields')
+    })
+  })
   
   describe('GET - success cases', () => {
     it('should be able to list all meals', async () => {
@@ -232,6 +260,53 @@ describe('Meals routes', () => {
         date: new Date()
       })
       .expect(204)
+    })
+  })
+
+  describe('PUT - failure cases', () => {
+    it.only('should not be able to update a meal without required fields', async () => {
+      const userResponse = await request(app.server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@email.com'
+        })
+        .expect(201)
+
+      const cookies = userResponse.get('Set-Cookie')
+      expect(cookies).toBeDefined()
+
+      await request(app.server)
+        .post('/meals')
+        .set('Cookie', cookies)
+        .send({
+          name: 'Breakfast',
+          description: "It's a breakfast",
+          isOnDiet: true,
+          date: new Date(),
+        })
+        .expect(201)
+
+      const mealsResponse = await request(app.server)
+        .get('/meals')
+        .set('Cookie', cookies)
+        .expect(200)
+
+      const mealId = mealsResponse.body.meals[0].id
+
+      const response = await request(app.server)
+        .put(`/meals/${mealId}`)
+        .set('Cookie', cookies)
+        .send({
+          name: '',
+          description: '',
+          isOnDiet: true,
+          date: new Date()
+        })
+        
+        
+        expect(response.status).toBe(400)
+        expect(response.body.message).toBe('Missing required fields')
     })
   })
 

@@ -16,6 +16,8 @@ export async function mealsRoutes(app: FastifyInstance) {
 
     const { name, description, isOnDiet, date } = createMealSchema.parse(request.body)
 
+    if (!name || !description) return reply.status(400).send({ message: 'Missing required fields' })
+
     await knex('meals').insert({
       id: crypto.randomUUID(),
       user_id: request.user?.id,
