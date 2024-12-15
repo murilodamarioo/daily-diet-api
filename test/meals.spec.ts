@@ -264,7 +264,7 @@ describe('Meals routes', () => {
   })
 
   describe('PUT - failure cases', () => {
-    it.only('should not be able to update a meal without required fields', async () => {
+    it('should not be able to update a meal without required fields', async () => {
       const userResponse = await request(app.server)
         .post('/users')
         .send({
@@ -344,6 +344,30 @@ describe('Meals routes', () => {
       .delete(`/meals/${mealId}`)
       .set('Cookie', cookies)
       .expect(204)
+    })
+  })
+
+  describe('DELETE - failure cases', () => {
+    it('should not be able to delete a meal with non-existent id', async () => {
+      const userResponse = await request(app.server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@email.com'
+        })
+        .expect(201)
+
+      const cookies = userResponse.get('Set-Cookie')
+      expect(cookies).toBeDefined()
+
+      const randomId = crypto.randomUUID()
+
+      const response = await request(app.server)
+        .delete(`/meals/${randomId}`)
+        .set('Cookie', cookies)
+
+      expect(response.status).toBe(404)
+      expect(response.body.message).toBe('Meal not found to delete')
     })
   })
 })
